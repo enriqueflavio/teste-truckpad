@@ -1,6 +1,6 @@
 <template>
   <div v-if="motoristas" class="row column q-gutter-md">
-    <q-btn color="primary" label="Cadastrar Motorista" @click="modal.novoMotorista = true" />
+    <q-btn class="float-buttom" color="primary" fab icon="fas fa-plus" @click="abrirCadastro" />
     <div class="row flex q-gutter-md">
       <q-card
         v-for="(motorista, index) in motoristas" :key="index"
@@ -15,8 +15,6 @@
           {{ motorista.addresses.street_name }}
         </q-card-section>
 
-        <q-separator dark />
-
         <q-card-actions class="absolute-bottom">
           <q-btn @click="editar(motorista)" :disable="!motorista.isAtivo" flat>Editar</q-btn>
           <q-btn @click="ativarinativar(motorista.id)" flat>
@@ -29,7 +27,7 @@
       <q-card style="width: 450px; max-width: 80vw;">
         <q-card-section>
           <div class="row no-wrap items-center">
-            <div class="col text-h6 ellipsis">Cadastro Motorista</div>
+            <div class="col text-h6 ellipsis">{{motorista.id ? 'Atualizar':'Cadastrar'}} Motorista</div>
             <div class="col-auto text-grey q-pt-md">
               <q-btn round color="negative" class="absolute-top-right" icon="fas fa-times" v-close-popup />
             </div>
@@ -39,26 +37,36 @@
         <q-card-section class="row flex flex-center">
           <div class="col-9">
             <q-input class="q-mt-md" outlined v-model="motorista.name" label="Nome" />
-            <q-input class="q-mt-md" outlined v-model="motorista.birth_date" label="Data Nascimento" />
+            <q-input mask="##/##/####" class="q-mt-md" outlined v-model="motorista.birth_date" label="Data Nascimento" />
             <q-input class="q-mt-md" outlined v-model="motorista.city" label="Cidade" />
             <q-input class="q-mt-md" outlined v-model="motorista.state" label="Estado" />
             <q-input
               class="q-mt-md"
+              mask="##########"
               outlined
-              v-model="motorista.documents[0].number"
+              v-model="motorista.documents.cnh.number"
               label="CNH"
             />
             <q-input
               class="q-mt-md"
+              mask="###.###.###-##"
               outlined
-              v-model="motorista.documents[1].number"
+              v-model="motorista.documents.cpf.number"
               label="CPF"
             />
             <q-btn
+              v-if="!atualizandoMotorista"
               @click="cadastrar"
               color="primary"
               class="q-my-lg full-width"
               label="Cadastrar"
+            />
+            <q-btn
+              v-else
+              @click="atualizar(motorista.id)"
+              color="primary"
+              class="q-my-lg full-width"
+              label="Atualizar"
             />
           </div>
         </q-card-section>
@@ -73,60 +81,122 @@ export default {
   data () {
     return {
       motorista: {
-        nome: '',
-        dataNascimento: '',
-        cidade: '',
-        estado: '',
-        documents: [
-          {
+        name: '',
+        birth_date: '',
+        city: '',
+        state: '',
+        documents: {
+          cnh: {
             number: ''
           },
-          {
+          cpf: {
             number: ''
           }
-        ]
+        }
       },
+      atualizandoMotorista: false,
       modal: {
         novoMotorista: false
       }
     }
   },
   methods: {
+    abrirCadastro () {
+      this.motorista = {}
+      this.motorista.documents = {}
+      this.motorista.documents.cnh = {}
+      this.motorista.documents.cpf = {}
+      this.modal.novoMotorista = true
+    },
     cadastrar () {
       const novoMotorista = {
         'id': this.motoristas.length + 1,
         'isAtivo': true,
-        'name': this.motorista.nome,
-        'birth_date': this.motorista.dataNascimento,
-        'state': this.motorista.estado,
-        'city': this.motorista.cidade,
+        'name': this.motorista.name,
+        'birth_date': this.motorista.birth_date,
+        'state': this.motorista.state,
+        'city': this.motorista.city,
         'addresses': {
           'name': '',
-          'state': this.motorista.estado,
+          'state': this.motorista.state,
           'country': 'BR',
           'neighborhood': 'CENTRO',
-          'city': this.motorista.cidade,
+          'city': this.motorista.city,
           'complement': '',
           'postal_code': '',
           'street_name': ''
         },
-        'documents': [
-          {
+        'documents': {
+          'cnh': {
             'expires_at': '',
             'country': 'BR',
-            'number': this.motorista.documents[0].number,
+            'number': this.motorista.documents.cnh.number,
             'doc_type': 'CNH',
             'category': ''
           },
-          {
+          'cpf': {
             'country': 'BR',
-            'number': this.motorista.documents[1].number,
+            'number': this.motorista.documents.cpf.number,
             'doc_type': 'CPF'
           }
-        ]
+        }
       }
       this.motoristas.push(novoMotorista)
       this.modal.novoMotorista = false
+    },
+    editar (motorista) {
+      if (motorista) {
+        this.motorista = { ...motorista }
+        if (!motorista.documents.cnh) {
+          this.motorista.documents.cnh = {}
+          this.motorista.documents.cnh.number = ''
+        }
+        if (!motorista.documents.cpf) {
+          this.motorista.documents.cpf = {}
+          this.motorista.documents.cpf.number = ''
+        }
+        this.modal.novoMotorista = true
+        this.atualizandoMotorista = true
+      }
+    },
+    atualizar (id) {
+      const editMotorista = {
+        'name': this.motorista.name,
+        'birth_date': this.motorista.birth_date,
+        'state': this.motorista.state,
+        'city': this.motorista.city,
+        'addresses': {
+          'name': '',
+          'state': this.motorista.state,
+          'country': 'BR',
+          'neighborhood': 'CENTRO',
+          'city': this.motorista.city,
+          'complement': '',
+          'postal_code': '',
+          'street_name': ''
+        },
+        'documents': {
+          'cnh': {
+            'expires_at': '',
+            'country': 'BR',
+            'number': this.motorista.documents.cnh.number,
+            'doc_type': 'CNH',
+            'category': ''
+          },
+          'cpf': {
+            'country': 'BR',
+            'number': this.motorista.documents.cpf.number,
+            'doc_type': 'CPF'
+          }
+        }
+      }
+      this.motoristas.map(motorista => {
+        if (motorista.id === id) {
+          motorista = { ...editMotorista }
+        }
+      })
+      this.modal.novoMotorista = false
+      this.atualizandoMotorista = false
     },
     ativarinativar (id) {
       this.motoristas.map(motorista => {
@@ -134,28 +204,21 @@ export default {
           motorista.isAtivo = !motorista.isAtivo
         }
       })
-    },
-    editar (motorista) {
-      if (motorista) {
-        this.motorista = { ...motorista }
-        console.log(this.motorista)
-        // if (motorista.documents[0].doc_type === 'CNH') {
-        //   this.motorista.documents[0].number = ''
-        // }
-        // if (!motorista.documents[1].number) {
-        //   this.motorista.documents[1].number = ''
-        // }
-        this.modal.novoMotorista = true
-      }
     }
   }
 }
 </script>
 <style lang="stylus" scoped>
 >>>.q-card
+  max-width 172px
+  min-width 172px
   min-height 200px
 .absolute-top-right
   top 8px
   right 5px
   transform scale(.7)
+.float-buttom
+  position fixed
+  bottom 20px
+  right 35px
 </style>
